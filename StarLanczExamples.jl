@@ -57,23 +57,23 @@ off4 = -0.2
 experimenttime = 100e-6 # in s = microsecond
 points = 1000 #accuracy to e-9 with 10000 points!!! 
 dt = experimenttime / points
-weakcc12 = 10000 #in Hz 
-weakcc13 = 20000 #in Hz 
-weakcc14 = 5000 #in Hz 
-weakcc23 = 12000 #in Hz 
-weakcc24 = 14000 #in Hz 
-weakcc34 = 8000 #in Hz 
+couplc12 = 10000 #in Hz 
+couplc13 = 20000 #in Hz 
+couplc14 = 5000 #in Hz 
+couplc23 = 12000 #in Hz 
+couplc24 = 14000 #in Hz 
+couplc34 = 8000 #in Hz 
 MASfrequency = 10000 #in Hz
 masperTime = experimenttime * MASfrequency
 timeOexp1 = Matrix(I, 16,16)
 
 H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc12 +
-2*s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc13 +
-2*s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc14 +
-2*s23z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc23 +
-2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc24 +
-2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc34)
+2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc12 +
+2*s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc13 +
+2*s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc14 +
+2*s23z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc23 +
+2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc24 +
+2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc34)
 
 for t = 1:points
     Ham = H(t*dt)
@@ -113,12 +113,12 @@ s34y = genOperatorDoubleSpin(4, 3, 4, Iy)
 timeOexp2 = Matrix(I, 16,16)
 for t = 1:points
     Ham = s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-        (2*s12z-s12x-s12y) *cos(2*pi*masperTime*t/points)* weakcc12 +
-        (2*s13z-s13x-s13y) *cos(2*pi*masperTime*t/points)* weakcc13 +
-        (2*s14z-s14x-s14y) *cos(2*pi*masperTime*t/points)* weakcc14 +
-        (2*s23z-s23x-s23y) *cos(2*pi*masperTime*t/points)* weakcc23 +
-        (2*s24z-s24x-s24y) *cos(2*pi*masperTime*t/points)* weakcc24 +
-        (2*s34z-s34x-s34y) *cos(2*pi*masperTime*t/points)* weakcc34
+        (2*s12z-s12x-s12y) *cos(2*pi*masperTime*t/points)* couplc12 +
+        (2*s13z-s13x-s13y) *cos(2*pi*masperTime*t/points)* couplc13 +
+        (2*s14z-s14x-s14y) *cos(2*pi*masperTime*t/points)* couplc14 +
+        (2*s23z-s23x-s23y) *cos(2*pi*masperTime*t/points)* couplc23 +
+        (2*s24z-s24x-s24y) *cos(2*pi*masperTime*t/points)* couplc24 +
+        (2*s34z-s34x-s34y) *cos(2*pi*masperTime*t/points)* couplc34
     prop = exp(dt*-im*Ham)
     global timeOexp2 =  prop * timeOexp2
 end
