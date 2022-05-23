@@ -68,12 +68,12 @@ masperTime = experimenttime * MASfrequency
 timeOexp1 = Matrix(I, 16,16)
 
 H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc12 +
-s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc13 +
-s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc14 +
-s23z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc23 +
-s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc24 +
-s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc34)
+2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc12 +
+2*s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc13 +
+2*s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc14 +
+2*s23z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc23 +
+2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc24 +
+2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* weakcc34)
 
 for t = 1:points
     Ham = H(t*dt)
