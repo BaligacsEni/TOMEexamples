@@ -54,9 +54,6 @@ off13C = -105e6
 off15N = 350e6
 off31P = 0
 
-experimenttime = 100e-6 # in s = microsecond
-points = 1000 #accuracy to e-9 with 10000 points!!! 
-dt = experimenttime / points
 # coupling constants in Hz
 couplcPC = -33.4275808727199
 couplcPN = -6.29323646000687
@@ -65,10 +62,10 @@ couplcCN = -10.8596662768044
 couplcCH = -118.875602347998
 couplcNH = -199.725378119845
 
-
+experimenttime = 300e-10 # in s = microsecond
+points = 1000 #accuracy to e-9 with 10000 points!!! 
+dt = experimenttime / points
 MASfrequency = 10000 #in Hz
-masperTime = experimenttime * MASfrequency
-timeOexp1 = Matrix(I, 16,16)
 
 H(t) = -im*2*pi .* (s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
 2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcCH +
@@ -78,6 +75,11 @@ H(t) = -im*2*pi .* (s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
 2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPC +
 2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPN)
 
+# Htime = [imag(H(n*dt)[1,1]) for n in 1:points]
+# using Plots
+# plot(Htime)
+
+timeOexp1 = Matrix(I, 16,16)
 for t = 1:points
     Ham = H(t*dt)
     prop = exp(dt*Ham)
@@ -85,35 +87,23 @@ for t = 1:points
 end
 print("The (diagonal of the) time ordered exponential of the first exmple is:\n")
 for n in 1:16
-    print(timeOexp1[n,n], "\n")
+    print(round(timeOexp1[n,n], digits = 10), "\n")
 end 
 
 tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
-pro = ODEProblem(LvNt, s1z+s2z*(1+0im), tspan)
+pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
 sol = solve(pro, abstol = 10e-8)
 display(round.(sol[end], digits = 5))
+for n in 1:16
+    print(sol[end][n,n], "\n")
+end 
 
 
 
-#
 # Example B: Non-Diagonal Matrix. 4 spins, with chemical shifts (offsets), all STRONGLY coupled. different time dependent coupling constants
-# Example molecule: Furanone 14C atoms 
+# Example molecule: Furanone 13C atoms 
 # generate the necessary Basis set for the Hamiltonian:
-
-off1 = 600
-off2 = 300
-off3 = 0
-off4 = -100
-
-# coupling constants in Hz
-couplc12 = -331.0782998347195
-couplc13 = -84.27020648106176
-couplc14 = -84.27020648106176
-couplc23 = -358.2771424200154
-couplc24 = -84.27020648106176
-couplc34 = -331.0782998347195
-
 s12x = genOperatorDoubleSpin(4, 1, 2, Ix)
 s13x = genOperatorDoubleSpin(4, 1, 3, Ix)
 s14x = genOperatorDoubleSpin(4, 1, 4, Ix)
@@ -128,20 +118,64 @@ s23y = genOperatorDoubleSpin(4, 2, 3, Iy)
 s24y = genOperatorDoubleSpin(4, 2, 4, Iy)
 s34y = genOperatorDoubleSpin(4, 3, 4, Iy)
 
+off1 = 600
+off2 = 300
+off3 = 0
+off4 = -100
+
+# coupling constants in Hz
+couplc12 = -331.0782998347195
+couplc13 = -84.27020648106176
+couplc14 = -84.27020648106176
+couplc23 = -358.2771424200154
+couplc24 = -84.27020648106176
+couplc34 = -331.0782998347195
+
+
+points = 10000 #accuracy to e-9 with 10000 points!!! 
+MASfrequency = 10000 #in Hz
+experimenttime = 1e-3 # in s = microsecond
+dt = experimenttime / points
+
+
+H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
+(2*s12z-s12x-s12y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc12 +
+(2*s13z-s13x-s13y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc13 +
+(2*s14z-s14x-s14y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc14 +
+(2*s23z-s23x-s23y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc23 +
+(2*s24z-s24x-s24y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc24 +
+(2*s34z-s34x-s34y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc34)
+
+plot([imag(H(n*dt)[1,1]) for n in 1:points])
+
 timeOexp2 = Matrix(I, 16,16)
 for t = 1:points
-    Ham = s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-        (2*s12z-s12x-s12y) *cos(2*pi*masperTime*t/points)* couplc12 +
-        (2*s13z-s13x-s13y) *cos(2*pi*masperTime*t/points)* couplc13 +
-        (2*s14z-s14x-s14y) *cos(2*pi*masperTime*t/points)* couplc14 +
-        (2*s23z-s23x-s23y) *cos(2*pi*masperTime*t/points)* couplc23 +
-        (2*s24z-s24x-s24y) *cos(2*pi*masperTime*t/points)* couplc24 +
-        (2*s34z-s34x-s34y) *cos(2*pi*masperTime*t/points)* couplc34
-    prop = exp(dt*-im*Ham)
+    Ham = H(t*dt)
+    prop = exp(dt*Ham)
     global timeOexp2 =  prop * timeOexp2
 end
 print("The time ordered exponential of the second exmple is:\n")
-display(round.(real.(timeOexp2), digits = 1))
+display(round.(timeOexp2, digits = 10))
+
+tspan = (0, experimenttime)
+LvNt(u, p, t) = H(t)*u
+pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
+sol = solve(pro, abstol = 10e-8)
+display(round.(sol[end], digits = 10))
+
+
+# toe = [0.0+0.0im for n in 1:points+1]
+# toe[1] = 1
+# experimenttime = 1e-3 # in s = microsecond
+# dt = experimenttime / points
+# for t in 1:points
+#     prop = exp(dt*H(t*dt)[1,1])
+#     print(H(t*dt)[1,1], "\n")
+#     toe[t+1] = prop * toe[t]
+# end
+
+# plot(real(toe))
+
 
 
 
@@ -159,17 +193,30 @@ s2y = genOperatorSingleSpin(4, 2, Iy)
 s3y = genOperatorSingleSpin(4, 3, Iy)
 s4y = genOperatorSingleSpin(4, 4, Iy)
 
+# random shaped pulse:
+H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
+    (0.5 + cos(4*t) + sin(10*t) - 0.4*sin(16*t/points))*10000 *(s1x+ s2x+ s3x+ s4x)+
+    (sin(4*t) + cos(8*t) + 2*sin(12*t))                *10000 *(s1y+ s2y+ s3y+ s4y))
+
+experimenttime = 1e-4
+dt = experimenttime/points
+
+# plot([imag(H(n*dt)[5]) for n in 1:points])
+
 timeOexp3 = Matrix(I, 16,16)
 for t = 1:points
-    Ham = s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-    (0.5 + cos(4*t/points) + sin(10*t/points) - 0.4*sin(16*t/points))*100 *(s1x+ s2x+ s3x+ s4x)+
-    (sin(4*t/points) + cos(8*t/points) + 2*sin(12*t/points))         *100 *(s1y+ s2y+ s3y+ s4y)
-    prop = exp(dt*-im*Ham)
+    Ham = H(t*dt)
+    prop = exp(dt*Ham)
     global timeOexp3 =  prop * timeOexp3 
 end
 print("The time ordered exponential of the second exmple is:\n")
-display(round.(timeOexp3, digits = 9))
+display(round.(timeOexp3, digits = 10))
 
+tspan = (0, experimenttime)
+LvNt(u, p, t) = H(t)*u
+pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
+sol = solve(pro, abstol = 10e-8)
+display(round.(sol[end], digits = 10))
 
 
 #=
