@@ -94,7 +94,8 @@ tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
 pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
 sol = solve(pro, abstol = 10e-8)
-display(round.(sol[end], digits = 5))
+# display(round.(sol[end], digits = 5))
+print("The (diagonal of the) time ordered exponential of the first exmple with ODEsolver is:\n")
 for n in 1:16
     print(sol[end][n,n], "\n")
 end 
@@ -146,7 +147,7 @@ H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
 (2*s24z-s24x-s24y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc24 +
 (2*s34z-s34x-s34y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc34)
 
-plot([imag(H(n*dt)[1,1]) for n in 1:points])
+# plot([imag(H(n*dt)[1,1]) for n in 1:points])
 
 timeOexp2 = Matrix(I, 16,16)
 for t = 1:points
@@ -161,6 +162,7 @@ tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
 pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
 sol = solve(pro, abstol = 10e-8)
+print("The time ordered exponential of the second exmple with ODEsolver is:\n")
 display(round.(sol[end], digits = 10))
 
 
@@ -209,13 +211,14 @@ for t = 1:points
     prop = exp(dt*Ham)
     global timeOexp3 =  prop * timeOexp3 
 end
-print("The time ordered exponential of the second exmple is:\n")
+print("The time ordered exponential of the third exmple is:\n")
 display(round.(timeOexp3, digits = 10))
 
 tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
 pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
 sol = solve(pro, abstol = 10e-8)
+print("The time ordered exponential of the third exmple with ODEsolver is:\n")
 display(round.(sol[end], digits = 10))
 
 
