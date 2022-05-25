@@ -49,9 +49,9 @@ s24z = genOperatorDoubleSpin(4, 2, 4, Iz)
 s34z = genOperatorDoubleSpin(4, 3, 4, Iz)
 
 #calculate the time ordered exponential: propagator = exp(-i*dt*Hamiltonian)
-off1H = 420e6
-off13C = -105e6
-off15N = 350e6
+# off1H = 420e6
+# off13C = -105e6
+# off15N = 350e6
 off31P = 0
 
 # coupling constants in Hz
@@ -62,12 +62,12 @@ couplcCN = -10.8596662768044
 couplcCH = -118.875602347998
 couplcNH = -199.725378119845
 
-experimenttime = 300e-10 # in s = microsecond
+experimenttime = 150e-6 # in s = microsecond
 points = 1000 #accuracy to e-9 with 10000 points!!! 
 dt = experimenttime / points
 MASfrequency = 10000 #in Hz
 
-H(t) = -im*2*pi .* (s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
+H(t) = -im*2*pi .* (#s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
 2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcCH +
 2*s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcNH +
 2*s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPH +
@@ -75,20 +75,46 @@ H(t) = -im*2*pi .* (s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
 2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPC +
 2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPN)
 
-# Htime = [imag(H(n*dt)[1,1]) for n in 1:points]
+Htime = [imag(H(n*dt)[1,1]) for n in 1:points]
 # using Plots
-# plot(Htime)
+timev = collect(0:dt:experimenttime)
+plot((Htime), label = "Element 1,1",
+    xlabel = "Points",
+    ylabel = "Hamiltonian",)
+savefig("ExampleAHam11.pdf")
+
+mshape = H(0)
+for n in 1:16, m in 1:16
+    if mshape[n,m] == 0 
+        mshape[n,m] = 0
+    else mshape[n,m] = 1
+    end
+end
+
+spy(mshape, marker = (:square, 10), legend = false)
+savefig("MatrixshapeA.pdf")
+
 
 timeOexp1 = Matrix(I, 16,16)
+toevec1 = rho = Array{ComplexF64, 3}(undef, 16,16,points+1)
+toevec1[:,:,1] = timeOexp1
 for t = 1:points
     Ham = H(t*dt)
     prop = exp(dt*Ham)
     global timeOexp1 =  prop * timeOexp1
+    toevec1[:,:,t+1] = timeOexp1
 end
 print("The (diagonal of the) time ordered exponential of the first exmple is:\n")
 for n in 1:16
     print(round(timeOexp1[n,n], digits = 10), "\n")
 end 
+
+# timev = collect(0:dt:experimenttime)
+plot([real(toevec1[1,1,n]) for n in 1:points+1], label = "Element 1,1",
+    xlabel = "Points",
+    ylabel = "Propagator Evolution")
+savefig("ExampleAProp11.pdf")
+
 
 tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
@@ -147,16 +173,40 @@ H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
 (2*s24z-s24x-s24y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc24 +
 (2*s34z-s34x-s34y) * (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplc34)
 
+Htime = [imag(H(n*dt)[3,2]) for n in 1:points]
+plot(Htime, label = "Element 3,2",
+    xlabel = "Points",
+    ylabel = "Hamiltonian")
+savefig("ExampleBHam32.pdf")
+
 # plot([imag(H(n*dt)[1,1]) for n in 1:points])
+mshape = H(0)
+for n in 1:16, m in 1:16
+    if mshape[n,m] == 0 
+        mshape[n,m] = 0
+    else mshape[n,m] = 1
+    end
+end
+
+spy(mshape, marker = (:square, 10), legend = false)
+savefig("MatrixshapeB.pdf")
 
 timeOexp2 = Matrix(I, 16,16)
+toevec2 = rho = Array{ComplexF64, 3}(undef, 16,16,points+1)
+toevec2[:,:,1] = timeOexp2
 for t = 1:points
     Ham = H(t*dt)
     prop = exp(dt*Ham)
     global timeOexp2 =  prop * timeOexp2
+    toevec2[:,:,t+1] = timeOexp2
 end
 print("The time ordered exponential of the second exmple is:\n")
 display(round.(timeOexp2, digits = 10))
+
+plot([real(toevec2[3,2,n]) for n in 1:points], label = "Element 3,2",
+    xlabel = "Points",
+    ylabel = "Propagator Evolution")
+savefig("ExampleBProp32.pdf")
 
 tspan = (0, experimenttime)
 LvNt(u, p, t) = H(t)*u
@@ -197,29 +247,53 @@ s4y = genOperatorSingleSpin(4, 4, Iy)
 
 # random shaped pulse:
 H(t) = -im*2*pi .* (s1z*off1 + s2z*off2 + s3z*off3 + s4z*off4 +
-    (0.5 + cos(4*t) + sin(10*t) - 0.4*sin(16*t/points))*10000 *(s1x+ s2x+ s3x+ s4x)+
-    (sin(4*t) + cos(8*t) + 2*sin(12*t))                *10000 *(s1y+ s2y+ s3y+ s4y))
+    (0.5 + cos(40*t) + sin(100*t) - 0.4*sin(160*t/points))*100 *(s1x+ s2x+ s3x+ s4x)+
+    (sin(40*t) + cos(80*t) + 2*sin(120*t))                *100 *(s1y+ s2y+ s3y+ s4y))
 
-experimenttime = 1e-4
+experimenttime = 1e-1
 dt = experimenttime/points
 
-# plot([imag(H(n*dt)[5]) for n in 1:points])
+Htime = [imag(H(n*dt)[5,1]) for n in 1:points]
+plot(Htime, label = "Element 5,1",
+    xlabel = "Points",
+    ylabel = "Hamiltonian")
+savefig("ExampleCHam51.pdf")
+
 
 timeOexp3 = Matrix(I, 16,16)
+toevec3 = rho = Array{ComplexF64, 3}(undef, 16,16,points+1)
+toevec3[:,:,1] = timeOexp3
 for t = 1:points
     Ham = H(t*dt)
     prop = exp(dt*Ham)
     global timeOexp3 =  prop * timeOexp3 
+    toevec3[:,:,t+1] = timeOexp3
 end
 print("The time ordered exponential of the third exmple is:\n")
 display(round.(timeOexp3, digits = 10))
 
-tspan = (0, experimenttime)
-LvNt(u, p, t) = H(t)*u
-pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
-sol = solve(pro, abstol = 10e-8)
-print("The time ordered exponential of the third exmple with ODEsolver is:\n")
-display(round.(sol[end], digits = 10))
+# tspan = (0, experimenttime)
+# LvNt(u, p, t) = H(t)*u
+# pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
+# sol = solve(pro, abstol = 10e-8)
+# print("The time ordered exponential of the third exmple with ODEsolver is:\n")
+# display(round.(sol[end], digits = 10))
+
+mshape = H(0)
+for n in 1:16, m in 1:16
+    if mshape[n,m] == 0 
+        mshape[n,m] = 0
+    else mshape[n,m] = 1
+    end
+end
+
+spy(mshape, marker = (:square, 10), legend = false)
+savefig("MatrixshapeC.pdf")
+
+plot([real(toevec3[5,1,n]) for n in 1:points], label = "Element 5,1",
+    xlabel = "Points",
+    ylabel = "Propagator Evolution")
+savefig("ExampleCProp51.pdf")
 
 
 #=
