@@ -5,6 +5,8 @@
 using LinearAlgebra 
 using Kronecker
 using DifferentialEquations
+# using PyPlots
+using Plots
 
 Ix = [0 0.5; 0.5 0]
 Iy = [0 -0.5im; 0.5im 0]
@@ -36,49 +38,78 @@ end
 
 #
 # Example D: 7 spin system (Matrix size 128 x 128). Only x + y pulses
-for spin in 1:7
+spins = 7 
+for spin in 1:spins
     name  = Symbol("s", spin, "x")
-    @eval $name = genOperatorSingleSpin(7, spin, Ix)
+    @eval $name = $(genOperatorSingleSpin(spins, spin, Ix))
     name  = Symbol("s", spin, "y")
-    @eval $name = genOperatorSingleSpin(7, spin, Iy)
+    @eval $name = $(genOperatorSingleSpin(spins, spin, Iy))
 end
 
 
-    
 f1(t) = cos(t)
 f2(t) = cos(2*t)
 
-spinrfX = [f1, f1, f1, f1, f2, f2, f2]
-spinrfY = [f1, f1, f1, f1, f2, f2, f2]
+spinrfX = vcat(repeat([f1], spins-3), repeat([f2], 3))
+spinrfY = spinrfX
+MASfrequency = 10000 #in Hz
+masfct(t) = (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))
 
-RFH(t) = genOperatorSingleSpin(7, 1, [0 0; 0 0])
-for spin in 1:7
+
+RFH0(t) = genOperatorSingleSpin(spins, 1, [0 0; 0 0])
+for spin in 1:spins
     rfx = Symbol("s", spin, "x")
     rfy = Symbol("s", spin, "y")
-    RFH(t) = RFH(t) + spinrfX[spin]*(@eval $rfx) + spinrfY*(@eval $rfy)
+    @eval $(Symbol("RFH", spin))(t) = $(Symbol("RFH", spin-1))(t) +
+    masfct(t)*(spinrfX[$spin](t)*($rfx) + spinrfY[$spin](t)*($rfy))
 end
-
-s1z = genOperatorSingleSpin(4, 1, Iz)
-s2z = genOperatorSingleSpin(4, 2, Iz)
-s3z = genOperatorSingleSpin(4, 3, Iz)
-s4z = genOperatorSingleSpin(4, 4, Iz)
-
-s12z = genOperatorDoubleSpin(4, 1, 2, Iz)
-s13z = genOperatorDoubleSpin(4, 1, 3, Iz)
-s14z = genOperatorDoubleSpin(4, 1, 4, Iz)
-s23z = genOperatorDoubleSpin(4, 2, 3, Iz)
-s24z = genOperatorDoubleSpin(4, 2, 4, Iz)
-s34z = genOperatorDoubleSpin(4, 3, 4, Iz)
+RFH(t) = eval(Symbol("RFH", spins))(t)
+RFH(2)
 
 
+coupvec = rand(spins, spins)
+coupvec = coupvec - tril(coupvec)
+# HetNcoupl = rand(Bool, spins, spins)
+HetNcoupl = zeros(spins, spins)
+HetNcoupl[1:4, 1:4] = (ones(4,4)- tril(ones(4,4)))
+HetNcoupl[5:7, 5:7] = (ones(3,3)- tril(ones(3,3)))
 
-H(t) = -im*2*pi .* (#s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
-2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcCH +
-2*s13z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcNH +
-2*s14z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPH +
-2*s23z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcCN +
-2*s24z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPC +
-2*s34z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcPN)
+Hdd0(t) = genOperatorSingleSpin(spins, 1, [0 0; 0 0])
+ldd = 0
+for spinA in 1:spins
+    for spinB in (1+spinA):spins
+        dcz = Symbol("s", spinA, spinB, "z")
+        dcx = Symbol("s", spinA, spinB, "x")
+        dcy = Symbol("s", spinA, spinB, "y")
+        @eval $dcz = $(genOperatorDoubleSpin(spins, spinA, spinB, Iz))
+        @eval $dcx = $(genOperatorDoubleSpin(spins, spinA, spinB, Ix))
+        @eval $dcy = $(genOperatorDoubleSpin(spins, spinA, spinB, Iy))
+        if HetNcoupl[spinA, spinB] == true
+            @eval $(Symbol("Hdd", spinA, spinB))(t) = $(Symbol("Hdd", $ldd))(t) 
+            #  + coupvec[$spinA, $spinB]*masfct(t)*
+            #  (2*(@eval $dcz) -(@eval $dcx) -(@eval $dcy)) 
+            @eval ldd = Symbol($spinA, $spinB)
+            print(ldd, " ")
+        else 
+            @eval $(Symbol("Hdd", spinA, spinB))(t) = $(Symbol("Hdd", $ldd))(t) +
+             coupvec[spinA, spinB]*masfct(t)* 2*(@eval $dcz) 
+             @eval ldd = Symbol($spinA, $spinB)
+            print(ldd, " ")
+        end
+    end
+end
+eval(Symbol("Hdd", spins-1, spins))(0)
+Hdd67(0)
+
+m = zeros(spins, spins)
+v = 1:(cumsum(1:spins)[end])
+for j in 1:spins, i in 1:spins
+    if j < i 
+        m[i, j] = minimum(v)
+
+
+
+H(t) = RFD(t) + RFH(t)
 
 Htime = [imag(H(n*dt)[1,1]) for n in 1:points]
 # using Plots
