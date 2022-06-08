@@ -1,6 +1,7 @@
 #Example Propagator calculations of time dependent Hamiltonians for Star-Lanczos
-#2022 January - Eni eniko.baligacs@sorbonne-universite.de
-#
+#2022 Mai - Eni eniko.baligacs@sorbonne-universite.de
+# Matrices in order 100 and 1000
+
 using LinearAlgebra 
 using Kronecker
 using DifferentialEquations
@@ -34,8 +35,29 @@ function genOperatorDoubleSpin(numberofspins, spinID1, spinID2, CBO)
 end
 
 #
-# Example A: Diagonal Matrix. 4 spins, with chemical shifts (offsets), all weakly coupled. different time dependent coupling constants 
-# generate the necessary Basis set for the Hamiltonian:
+# Example D: 7 spin system (Matrix size 128 x 128). Only x + y pulses
+for spin in 1:7
+    name  = Symbol("s", spin, "x")
+    @eval $name = genOperatorSingleSpin(7, spin, Ix)
+    name  = Symbol("s", spin, "y")
+    @eval $name = genOperatorSingleSpin(7, spin, Iy)
+end
+
+
+    
+f1(t) = cos(t)
+f2(t) = cos(2*t)
+
+spinrfX = [f1, f1, f1, f1, f2, f2, f2]
+spinrfY = [f1, f1, f1, f1, f2, f2, f2]
+
+RFH(t) = genOperatorSingleSpin(7, 1, [0 0; 0 0])
+for spin in 1:7
+    rfx = Symbol("s", spin, "x")
+    rfy = Symbol("s", spin, "y")
+    RFH(t) = RFH(t) + spinrfX[spin]*(@eval $rfx) + spinrfY*(@eval $rfy)
+end
+
 s1z = genOperatorSingleSpin(4, 1, Iz)
 s2z = genOperatorSingleSpin(4, 2, Iz)
 s3z = genOperatorSingleSpin(4, 3, Iz)
@@ -48,24 +70,7 @@ s23z = genOperatorDoubleSpin(4, 2, 3, Iz)
 s24z = genOperatorDoubleSpin(4, 2, 4, Iz)
 s34z = genOperatorDoubleSpin(4, 3, 4, Iz)
 
-#calculate the time ordered exponential: propagator = exp(-i*dt*Hamiltonian)
-# off1H = 420e6
-# off13C = -105e6
-# off15N = 350e6
-off31P = 0
 
-# coupling constants in Hz
-couplcPC = -33.4275808727199
-couplcPN = -6.29323646000687
-couplcPH = -269.865214403666
-couplcCN = -10.8596662768044
-couplcCH = -118.875602347998
-couplcNH = -199.725378119845
-
-experimenttime = 150e-6 # in s = microsecond
-points = 1000 #accuracy to e-9 with 10000 points!!! 
-dt = experimenttime / points
-MASfrequency = 10000 #in Hz
 
 H(t) = -im*2*pi .* (#s1z*off1H + s2z*off13C + s3z*off15N + s4z*off31P +
 2*s12z* (cos(2*pi*MASfrequency*t) + cos(4*pi*MASfrequency*t))* couplcCH +
@@ -91,7 +96,6 @@ for n in 1:16, m in 1:16
     end
 end
 
-using PyPlot
 spy(mshape, marker = (:square, 10), legend = false)
 savefig("MatrixshapeA.pdf")
 
