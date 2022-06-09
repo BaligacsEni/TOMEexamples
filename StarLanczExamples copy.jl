@@ -46,8 +46,8 @@ for spin in 1:spins
 end
 
 
-f1(t) = cos(t)
-f2(t) = cos(2*t)
+f1(t) = cos(t*1000)
+f2(t) = cos(2*t*1000)
 
 spinrfX = vcat(repeat([f1], spins-3), repeat([f2], 3))
 spinrfY = spinrfX
@@ -114,19 +114,20 @@ plot((Htime), label = "Element 1,1",
 # savefig("ExampleAHam11.pdf")
 
 mshape = H(0)
-for n in 1:16, m in 1:16
+ms = size(mshape)[1]
+for n in 1:ms, m in 1:ms
     if mshape[n,m] == 0 
         mshape[n,m] = 0
     else mshape[n,m] = 1
     end
 end
 
-spy(mshape, marker = (:square, 10), legend = false)
-savefig("MatrixshapeA.pdf")
+spy(mshape, marker = (:square, 1.5), legend = false)
+# savefig("MatrixshapeA.pdf")
 
 
-timeOexp1 = Matrix(I, 16,16)
-toevec1 = rho = Array{ComplexF64, 3}(undef, 16,16,points+1)
+timeOexp1 = Matrix(I, ms,ms)
+toevec1 = rho = Array{ComplexF64, 3}(undef, ms,ms,points+1)
 toevec1[:,:,1] = timeOexp1
 for t = 1:points
     Ham = H(t*dt)
@@ -143,7 +144,7 @@ end
 plot([real(toevec1[1,1,n]) for n in 1:points+1], label = "Element 1,1",
     xlabel = "Points",
     ylabel = "Propagator Evolution")
-savefig("ExampleAProp11.pdf")
+# savefig("ExampleAProp11.pdf")
 
 
 tspan = (0, experimenttime)
