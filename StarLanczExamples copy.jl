@@ -5,7 +5,6 @@
 using LinearAlgebra 
 using Kronecker
 using DifferentialEquations
-# using PyPlots
 using Plots
 
 Ix = [0 0.5; 0.5 0]
@@ -75,7 +74,7 @@ HetNcoupl[1:4, 1:4] = (ones(4,4)- tril(ones(4,4)))
 HetNcoupl[5:7, 5:7] = (ones(3,3)- tril(ones(3,3)))
 
 Hdd0(t) = genOperatorSingleSpin(spins, 1, [0 0; 0 0])
-ldd = 0
+c = 1
 for spinA in 1:spins
     for spinB in (1+spinA):spins
         dcz = Symbol("s", spinA, spinB, "z")
@@ -85,39 +84,34 @@ for spinA in 1:spins
         @eval $dcx = $(genOperatorDoubleSpin(spins, spinA, spinB, Ix))
         @eval $dcy = $(genOperatorDoubleSpin(spins, spinA, spinB, Iy))
         if HetNcoupl[spinA, spinB] == true
-            @eval $(Symbol("Hdd", spinA, spinB))(t) = $(Symbol("Hdd", $ldd))(t) 
-            #  + coupvec[$spinA, $spinB]*masfct(t)*
-            #  (2*(@eval $dcz) -(@eval $dcx) -(@eval $dcy)) 
-            @eval ldd = Symbol($spinA, $spinB)
-            print(ldd, " ")
+            @eval $(Symbol("Hdd", c))(t) = $(Symbol("Hdd", c-1))(t) +
+            coupvec[$spinA, $spinB]*masfct(t)*(2*(@eval $dcz) -(@eval $dcx) -(@eval $dcy)) 
+            c +=1
         else 
-            @eval $(Symbol("Hdd", spinA, spinB))(t) = $(Symbol("Hdd", $ldd))(t) +
-             coupvec[spinA, spinB]*masfct(t)* 2*(@eval $dcz) 
-             @eval ldd = Symbol($spinA, $spinB)
-            print(ldd, " ")
+            @eval $(Symbol("Hdd", c))(t) = $(Symbol("Hdd", c-1))(t) +
+            coupvec[$spinA, $spinB]*masfct(t)*2*(@eval $dcz) 
+            c +=1
         end
     end
 end
-eval(Symbol("Hdd", spins-1, spins))(0)
-Hdd67(0)
-
-m = zeros(spins, spins)
-v = 1:(cumsum(1:spins)[end])
-for j in 1:spins, i in 1:spins
-    if j < i 
-        m[i, j] = minimum(v)
+@eval $(Symbol("Hdd"))(t) = $(Symbol("Hdd", c-1))(t)
+Hdd(0)
 
 
+H(t) = Hdd(t) + RFH(t)
+H(0.1)
 
-H(t) = RFD(t) + RFH(t)
 
-Htime = [imag(H(n*dt)[1,1]) for n in 1:points]
-# using Plots
+points = 1000
+T = 1
+dt = T/points
+Htime = [real(H(n*dt)[1,1]) for n in 1:points]
+using Plots
 timev = collect(0:dt:experimenttime)
 plot((Htime), label = "Element 1,1",
     xlabel = "Points",
     ylabel = "Hamiltonian",)
-savefig("ExampleAHam11.pdf")
+# savefig("ExampleAHam11.pdf")
 
 mshape = H(0)
 for n in 1:16, m in 1:16
