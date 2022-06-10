@@ -63,7 +63,7 @@ end
 ###########################################################
 # todo: test functions!
 # Example D: 7 spin system (Matrix size 128 x 128). Only x + y pulses
-spins = 10 
+spins = 5
 exptime = 0.01
 nt = 100
 dt = exptime/nt
@@ -105,20 +105,22 @@ end
 RFH(t) = eval(Symbol("RFH", spins))(t)
 
 # see shape of the full Radiofrequency Hamiltonian
-spy(getHamShape(RFH), marker = (:square, 1))
+spy(getHamShape(RFH), marker = (:square, 6))
 
 # test single elements
 plot([imag(RFH(n*dt)[1,5]) for n in 1:nt])
 
 
 ##############create the dipolar coupling Hamiltonian
-coupvec = rand(spins, spins)*1000 #in Hz
+coupvec = rand(spins, spins)*2*pi*1000 #in Hz
 coupvec = coupvec - tril(coupvec)
 # Homcoupl = rand(Bool, spins, spins)
 # here: heteronuclear coupling only between the first 4 vs last 3
 Homcoupl = zeros(spins, spins)
-Homcoupl[1:4, 1:4] = (ones(4,4)- tril(ones(4,4)))
-Homcoupl[5:7, 5:7] = (ones(3,3)- tril(ones(3,3)))
+Homcoupl[1:3, 1:3] = (ones(3,3)- tril(ones(3,3)))
+Homcoupl[4:5, 4:5] = (ones(2,2)- tril(ones(2,2)))
+
+
 
 Hdd0(t) = genOperatorSingleSpin(spins, 1, [0 0; 0 0])
 c = 1
@@ -142,13 +144,12 @@ for spinA in 1:spins
     end
 end
 @eval $(Symbol("Hdd"))(t) = $(Symbol("Hdd", c-1))(t)
-Hdd(0)
 
 # see shape of the full dipolar coupling Hamiltonian
-spy(getHamShape(Hdd), marker = (:square, 1.5))
+spy(getHamShape(Hdd), marker = (:square, 6))
 
 # test single elements
-plot([real(Hdd(n*dt)[2,3]) for n in 1:nt])
+plot([real(Hdd(n*dt)[3,2]) for n in 1:nt])
 
 
 
@@ -158,10 +159,10 @@ plot([real(Hdd(n*dt)[2,3]) for n in 1:nt])
 H(t) = Hdd(t) + RFH(t)
 
 # see shape of the full Hamiltonian
-spy(getHamShape(H), marker = (:square, 1.5))
+spy(getHamShape(RFH), marker = (:square, 6))
 
 # test single elements
-plot([real(H(n*dt)[1,2]) for n in 1:nt])
+plot([real(H(n*dt)[1,]) for n in 1:nt])
 
 
 
@@ -179,15 +180,16 @@ for t = 1:nt
     toevec1[:,:,t+1] = timeOexp1
 end
 
-plot([real(toevec1[1,6,n]) for n in 1:nt+1], label = "Element 1,1",
+plot([real(toevec1[1,1,n]) for n in 1:nt+1], label = "Element 1,1",
     xlabel = "Points",
     ylabel = "Propagator Evolution")
 spy(getPropShape(toevec1[:,:,2]), marker = (:square, 1.5))
 
 ############# solve with solver
 # if the solver still works with your matrix size: (good luck!)
-tspan = (0, experimenttime)
+tspan = (0, exptime)
 LvNt(u, p, t) = H(t)*u
-pro = ODEProblem(LvNt, Matrix(I, 16, 16)*(1.0+0.0im), tspan)
+pro = ODEProblem(LvNt, Matrix(I, ms, ms)*(1.0+0.0im), tspan)
 sol = solve(pro, abstol = 10e-8)
+
 
